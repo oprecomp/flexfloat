@@ -83,13 +83,23 @@ uint_t flexfloat_pack_bits(flexfloat_desc_t desc, uint_t bits)
     int_fast16_t exp = (bits >> desc.frac_bits) & ((0x1<<desc.exp_bits) - 1);
     uint_t frac = bits & ((0x1<<desc.frac_bits) - 1);
 
-    return flexfloat_pack(desc, sign, exp, frac);
+    if(exp == 0 && frac == 0)
+      return PACK(sign, 0, 0);
+    else
+      return flexfloat_pack(desc, sign, exp, frac);
+}
+
+void flexfloat_set_bits(flexfloat_t *a, uint_t bits)
+{
+    CAST_TO_INT(a->value) = flexfloat_pack_bits(a->desc, bits);
 }
 
 uint_t flexfloat_get_bits(flexfloat_t *a)
 {
+    int_fast16_t exp = flexfloat_exp(a);
+    if(exp == INF_EXP) exp = flexfloat_inf_exp(a->desc);
     return (flexfloat_sign(a) << (a->desc.exp_bits + a->desc.frac_bits))
-           + (flexfloat_exp(a) << a->desc.frac_bits)
+           + (exp << a->desc.frac_bits)
            + flexfloat_frac(a);
 }
 
@@ -192,34 +202,34 @@ void flexfloat_sanitize(flexfloat_t *a)
 
 #ifdef FLEXFLOAT_ROUNDING
     // In these cases no rounding is needed
-    if(exp == INF_EXP  || a->desc.frac_bits == NUM_BITS_FRAC)
-        goto exit_rounding;
-    // Rounding mode
-    int mode = fegetround();
-    if(mode == FE_TONEAREST && flexfloat_nearest_rounding(a, exp))
+    if (!(exp == INF_EXP  || a->desc.frac_bits == NUM_BITS_FRAC))
     {
-        int_t rounding_value = flexfloat_rounding_value(a, exp, sign);
-        a->value +=  CAST_TO_FP(rounding_value);
-    }
-    else if(mode == FE_UPWARD && flexfloat_inf_rounding(a, exp, sign, 1))
-    {
-        int_t rounding_value = flexfloat_rounding_value(a, exp, sign);
-        a->value +=  CAST_TO_FP(rounding_value);
-    }
-    else if(mode == FE_DOWNWARD && flexfloat_inf_rounding(a, exp, sign, 0))
-    {
-        int_t rounding_value = flexfloat_rounding_value(a, exp, sign);
-        a->value +=  CAST_TO_FP(rounding_value);
-    }
-    //a->value = a->value;
-    __asm__ __volatile__ ("" ::: "memory");
+        // Rounding mode
+        int mode = fegetround();
+        if(mode == FE_TONEAREST && flexfloat_nearest_rounding(a, exp))
+        {
+            int_t rounding_value = flexfloat_rounding_value(a, exp, sign);
+            a->value +=  CAST_TO_FP(rounding_value);
+        }
+        else if(mode == FE_UPWARD && flexfloat_inf_rounding(a, exp, sign, 1))
+        {
+            int_t rounding_value = flexfloat_rounding_value(a, exp, sign);
+            a->value +=  CAST_TO_FP(rounding_value);
+        }
+        else if(mode == FE_DOWNWARD && flexfloat_inf_rounding(a, exp, sign, 0))
+        {
+            int_t rounding_value = flexfloat_rounding_value(a, exp, sign);
+            a->value +=  CAST_TO_FP(rounding_value);
+        }
+        //a->value = a->value;
+        __asm__ __volatile__ ("" ::: "memory");
 
-    // Recompute exponent value after rounding
-    exp = flexfloat_exp(a);
+        // Recompute exponent value after rounding
+        exp = flexfloat_exp(a);
+    }
 #endif
 
     // Mantissa
-exit_rounding:
     frac = flexfloat_frac(a);
 
    if(EXPONENT(CAST_TO_INT(a->value)) == 0) // Denorm backend format

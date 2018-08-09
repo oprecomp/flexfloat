@@ -166,6 +166,7 @@ void flexfloat_sanitize(flexfloat_t *a);
 // Bit-level access
 
 uint_t flexfloat_pack_bits(flexfloat_desc_t desc, uint_t bits);
+void flexfloat_set_bits(flexfloat_t *a, uint_t bits);
 uint_t flexfloat_get_bits(flexfloat_t *a);
 
 
