@@ -117,11 +117,15 @@ typedef __float128 fp_t;
 #endif
 
 
+//#define FLEXFLOAT_DEPGRAPH
+
 // Types
 
 struct _flexfloat_t;
 typedef struct _flexfloat_t flexfloat_t;
 typedef void (*ff_function_p)(flexfloat_t *, void *);
+
+#include "utils.h"
 
 typedef struct _flexfloat_desc_t {
     uint8_t exp_bits;
@@ -134,6 +138,10 @@ struct _flexfloat_t {
     fp_t exact_value;
     ff_function_p tracking_fn;
     void * tracking_arg;
+#endif
+#ifdef FLEXFLOAT_DEPGRAPH
+    const char * label;
+    node_t * dep_list;
 #endif
     flexfloat_desc_t desc;
 };
@@ -285,6 +293,15 @@ static inline void ff_track_callback (flexfloat_t *a, ff_function_p fn, void *ar
 }
 
 #endif /* FLEXFLOAT_TRACKING */
+
+
+#ifdef FLEXFLOAT_DEPGRAPH
+
+static inline void ff_set_label(flexfloat_t *a, const char *label) {
+    a->label = label;
+}
+
+#endif /* FLEXFLOAT_DEPGRAPH */
 
 #endif
 

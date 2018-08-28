@@ -27,6 +27,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUP
 
 set(library_SOURCES
     src/flexfloat.c
+    src/utils.c
 )
 
 add_library(flexfloat STATIC ${library_SOURCES})
@@ -43,17 +44,17 @@ option(ENABLE_TRACKING "Enable track of error accumulation on program variables"
 if(SINGLE_BACKEND)
     file(WRITE include/flexfloat_config.h "#define FLEXFLOAT_ON_SINGLE\n" )
 elseif(QUAD_BACKEND)
-    file(WRITE include/flexfloat_config.h "#define FLEXFLOAT_ON_QUAD\n" )    
+    file(WRITE include/flexfloat_config.h "#define FLEXFLOAT_ON_QUAD\n" )
 else()
     file(WRITE include/flexfloat_config.h "#define FLEXFLOAT_ON_DOUBLE\n" )
 endif()
 
 if(DISABLE_ROUNDING)
-    file(APPEND include/flexfloat_config.h "#define FLEXFLOAT_NO_ROUNDING\n" )    
+    file(APPEND include/flexfloat_config.h "#define FLEXFLOAT_NO_ROUNDING\n" )
 endif()
 
 if(ENABLE_STATS)
-    file(APPEND include/flexfloat_config.h "#define FLEXFLOAT_STATS\n" )    
+    file(APPEND include/flexfloat_config.h "#define FLEXFLOAT_STATS\n" )
 endif()
 
 if(ENABLE_TRACKING)

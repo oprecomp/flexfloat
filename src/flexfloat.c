@@ -24,6 +24,8 @@
 
 #include "assert.h"
 
+node_t * FlexFloatVars;
+
 int_fast16_t flexfloat_exp(const flexfloat_t *a)
 {
     int_fast16_t a_exp   = EXPONENT(CAST_TO_INT(a->value));
@@ -280,6 +282,11 @@ INLINE void ff_init(flexfloat_t *obj, flexfloat_desc_t desc) {
     obj->tracking_fn = 0;
     obj->tracking_arg = 0;
     #endif
+    #ifdef FLEXFLOAT_DEPGRAPH
+    obj->label = NULL;
+    obj->dep_list = NULL;
+    addEnvVariable(obj);
+    #endif
     obj->desc = desc;
 }
 
@@ -289,6 +296,11 @@ INLINE void ff_init_float(flexfloat_t *obj, float value, flexfloat_desc_t desc) 
     obj->exact_value = (fp_t)value;
     obj->tracking_fn = 0;
     obj->tracking_arg = 0;
+    #endif
+    #ifdef FLEXFLOAT_DEPGRAPH
+    obj->label = NULL;
+    obj->dep_list = NULL;
+    addEnvVariable(obj);
     #endif
     obj->desc = desc;
     flexfloat_sanitize(obj);
@@ -300,6 +312,11 @@ INLINE void ff_init_double(flexfloat_t *obj, double value, flexfloat_desc_t desc
     obj->exact_value = (fp_t)value;
     obj->tracking_fn = 0;
     obj->tracking_arg = 0;
+    #endif
+    #ifdef FLEXFLOAT_DEPGRAPH
+    obj->label = NULL;
+    obj->dep_list = NULL;
+    addEnvVariable(obj);
     #endif
     obj->desc = desc;
     flexfloat_sanitize(obj);
@@ -313,6 +330,11 @@ INLINE void ff_init_longdouble(flexfloat_t *obj, long double value, flexfloat_de
     obj->tracking_fn = 0;
     obj->tracking_arg = 0;
     #endif
+    #ifdef FLEXFLOAT_DEPGRAPH
+    obj->label = NULL;
+    obj->dep_list = NULL;
+    addEnvVariable(obj);
+    #endif
     obj->desc = desc;
     flexfloat_sanitize(obj);
 }
@@ -324,6 +346,11 @@ INLINE void ff_init_float128(flexfloat_t *obj, __float128 value, flexfloat_desc_
     obj->tracking_fn = 0;
     obj->tracking_arg = 0;
     #endif
+    #ifdef FLEXFLOAT_DEPGRAPH
+    obj->label = NULL;
+    obj->dep_list = NULL;
+    addEnvVariable(obj);
+    #endif
     obj->desc = desc;
     flexfloat_sanitize(obj);
 }
@@ -334,6 +361,11 @@ INLINE void ff_init_int(flexfloat_t *obj, int value, flexfloat_desc_t desc) {
     obj->exact_value = (fp_t)value;
     obj->tracking_fn = 0;
     obj->tracking_arg = 0;
+    #endif
+    #ifdef FLEXFLOAT_DEPGRAPH
+    obj->label = NULL;
+    obj->dep_list = NULL;
+    addEnvVariable(obj);
     #endif
     obj->desc = desc;
     flexfloat_sanitize(obj);
@@ -347,6 +379,11 @@ INLINE void ff_init_long(flexfloat_t *obj, long value, flexfloat_desc_t desc) {
     obj->tracking_fn = 0;
     obj->tracking_arg = 0;
     #endif
+    #ifdef FLEXFLOAT_DEPGRAPH
+    obj->label = NULL;
+    obj->dep_list = NULL;
+    addEnvVariable(obj);
+    #endif
     obj->desc = desc;
     flexfloat_sanitize(obj);
 }
@@ -359,6 +396,11 @@ INLINE void ff_cast(flexfloat_t *obj, const flexfloat_t *source, flexfloat_desc_
     obj->exact_value = source->exact_value;
     obj->tracking_fn = 0;
     obj->tracking_arg = 0;
+    #endif
+    #ifdef FLEXFLOAT_DEPGRAPH
+    obj->label = NULL;
+    obj->dep_list = NULL;
+    addEnvVariable(obj);
     #endif
     obj->desc  = desc;
     if(desc.exp_bits != source->desc.exp_bits || desc.frac_bits != source->desc.frac_bits)
@@ -400,6 +442,10 @@ INLINE void ff_inverse(flexfloat_t *dest, const flexfloat_t *a) {
     #ifdef FLEXFLOAT_STATS
     if(StatsEnabled) getOpStats(dest->desc)->minus += 1;
     #endif
+    #ifdef FLEXFLOAT_DEPGRAPH
+    dependency_t *dep = createDependency1("MINUS", a);
+    addDependencyNode(&dest->dep_list, dep);
+    #endif
 }
 
 
@@ -415,6 +461,10 @@ INLINE void ff_add(flexfloat_t *dest, const flexfloat_t *a, const flexfloat_t *b
     #ifdef FLEXFLOAT_STATS
     if(StatsEnabled) getOpStats(dest->desc)->add += 1;
     #endif
+    #ifdef FLEXFLOAT_DEPGRAPH
+    dependency_t *dep = createDependency2("ADD", a, b);
+    addDependencyNode(&dest->dep_list, dep);
+    #endif
 }
 
 INLINE void ff_sub(flexfloat_t *dest, const flexfloat_t *a, const flexfloat_t *b) {
@@ -428,6 +478,10 @@ INLINE void ff_sub(flexfloat_t *dest, const flexfloat_t *a, const flexfloat_t *b
     flexfloat_sanitize(dest);
     #ifdef FLEXFLOAT_STATS
     if(StatsEnabled) getOpStats(dest->desc)->sub += 1;
+    #endif
+    #ifdef FLEXFLOAT_DEPGRAPH
+    dependency_t *dep = createDependency2("SUB", a, b);
+    addDependencyNode(&dest->dep_list, dep);
     #endif
 }
 
@@ -443,6 +497,10 @@ INLINE void ff_mul(flexfloat_t *dest, const flexfloat_t *a, const flexfloat_t *b
     #ifdef FLEXFLOAT_STATS
     if(StatsEnabled) getOpStats(dest->desc)->mul += 1;
     #endif
+    #ifdef FLEXFLOAT_DEPGRAPH
+    dependency_t *dep = createDependency2("MUL", a, b);
+    addDependencyNode(&dest->dep_list, dep);
+    #endif
 }
 
 INLINE void ff_div(flexfloat_t *dest, const flexfloat_t *a, const flexfloat_t *b) {
@@ -457,6 +515,10 @@ INLINE void ff_div(flexfloat_t *dest, const flexfloat_t *a, const flexfloat_t *b
     #ifdef FLEXFLOAT_STATS
     if(StatsEnabled) getOpStats(dest->desc)->div += 1;
     #endif
+    #ifdef FLEXFLOAT_DEPGRAPH
+    dependency_t *dep = createDependency2("DIV", a, b);
+    addDependencyNode(&dest->dep_list, dep);
+    #endif
 }
 
 INLINE void ff_acc(flexfloat_t *dest, const flexfloat_t *a) {
@@ -468,7 +530,11 @@ INLINE void ff_acc(flexfloat_t *dest, const flexfloat_t *a) {
     #endif
     flexfloat_sanitize(dest);
     #ifdef FLEXFLOAT_STATS
-    if(StatsEnabled) getOpStats(dest->desc)->minus += 1;
+    if(StatsEnabled) getOpStats(dest->desc)->add += 1;
+    #endif
+    #ifdef FLEXFLOAT_DEPGRAPH
+    dependency_t *dep = createDependency2("ADD", a, dest);
+    addDependencyNode(&dest->dep_list, dep);
     #endif
 }
 
