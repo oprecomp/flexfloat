@@ -37,9 +37,10 @@ struct OpsStats {
     uint64_t sub;
     uint64_t mul;
     uint64_t div;
+    uint64_t fma;
     uint64_t cmp;
 
-    OpsStats(): minus(0), add(0), sub(0), mul(0), div(0), cmp(0) { }
+    OpsStats(): minus(0), add(0), sub(0), mul(0), div(0), fma(0), cmp(0) { }
 };
 
 struct CastingStats {
@@ -130,6 +131,7 @@ static inline void flexfloat_print_stats() {
         std::cout << std::string(PADDING, ' ') << "SUB   \t" << stat.second.sub << std::endl;
         std::cout << std::string(PADDING, ' ') << "MUL   \t" << stat.second.mul << std::endl;
         std::cout << std::string(PADDING, ' ') << "DIV   \t" << stat.second.div << std::endl;
+        std::cout << std::string(PADDING, ' ') << "FMA   \t" << stat.second.fma << std::endl;
         std::cout << std::string(PADDING, ' ') << "MINUS \t" << stat.second.minus << std::endl;
         std::cout << std::string(PADDING, ' ') << "CMP   \t" << stat.second.cmp << std::endl;
     }
@@ -142,6 +144,7 @@ static inline void flexfloat_print_stats() {
         std::cout << std::string(PADDING, ' ') << "SUB    \t" << stat.second.sub << std::endl;
         std::cout << std::string(PADDING, ' ') << "MUL    \t" << stat.second.mul << std::endl;
         std::cout << std::string(PADDING, ' ') << "DIV    \t" << stat.second.div << std::endl;
+        std::cout << std::string(PADDING, ' ') << "FMA    \t" << stat.second.fma << std::endl;
         std::cout << std::string(PADDING, ' ') << "MINUS  \t" << stat.second.minus << std::endl;
         std::cout << std::string(PADDING, ' ') << "CMP    \t" << stat.second.cmp << std::endl;
     }

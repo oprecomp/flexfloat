@@ -16,7 +16,8 @@
 */
 
 #include "flexfloat.h"
-#include "math.h"
+// To avoid manually discerning backend-type for calls from math.h
+#include <tgmath.h>
 
 #ifdef FLEXFLOAT_ROUNDING
 #include <fenv.h>
@@ -472,6 +473,21 @@ INLINE void ff_acc(flexfloat_t *dest, const flexfloat_t *a) {
     #endif
 }
 
+INLINE void ff_fma(flexfloat_t *dest, const flexfloat_t *a, const flexfloat_t *b, const flexfloat_t *c) {
+    assert((dest->desc.exp_bits == a->desc.exp_bits) && (dest->desc.frac_bits == a->desc.frac_bits) &&
+           (a->desc.exp_bits == b->desc.exp_bits) && (a->desc.frac_bits == b->desc.frac_bits) &&
+           (b->desc.exp_bits == c->desc.exp_bits) && (b->desc.frac_bits == c->desc.frac_bits));
+    dest->value = fma(a->value, b->value, c->value);
+    #ifdef FLEXFLOAT_TRACKING
+    dest->exact_value = fma(a->exact_value, b->exact_value, c->exact_value);
+    if(dest->tracking_fn) (dest->tracking_fn)(dest, dest->tracking_arg);
+    #endif
+    flexfloat_sanitize(dest);
+    #ifdef FLEXFLOAT_STATS
+    if(StatsEnabled) getOpStats(dest->desc)->fma += 1;
+    #endif
+}
+
 
 // Relational operators
 
@@ -615,6 +631,7 @@ void ff_print_stats() {
             printf("    SUB    \t%lu\n", stats->sub);
             printf("    MUL    \t%lu\n", stats->mul);
             printf("    DIV    \t%lu\n", stats->div);
+            printf("    FMA    \t%lu\n", stats->fma);
             printf("    CMP    \t%lu\n", stats->cmp);
         }
     }
