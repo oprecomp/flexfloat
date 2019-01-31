@@ -56,9 +56,33 @@ TEST(FlexFloatNearestRoundingTest, Denormal3Bits) {
     EXPECT_EQ("0-000-111", bitstring(ff_val));
 }
 
+TEST(FlexFloatNearestRoundingTest, DenormalQuarter) {
+    fesetround(FE_TONEAREST);
+    const double val = 0.0703125; // 1/16 + 1/128
+    flexfloat<3, 3> ff_val;
+    ff_val = val;
+    EXPECT_EQ("0-000-010", bitstring(ff_val));
+}
+
+TEST(FlexFloatNearestRoundingTest, DenormalHalfway) {
+    fesetround(FE_TONEAREST);
+    const double val = 0.078125; // 1/16 + 1/64
+    flexfloat<3, 3> ff_val;
+    ff_val = val;
+    EXPECT_EQ("0-000-010", bitstring(ff_val));
+}
+
+TEST(FlexFloatNearestRoundingTest, DenormalThreeQuarters) {
+    fesetround(FE_TONEAREST);
+    const double val = 0.0859375; // 1/16 + 3/128
+    flexfloat<3, 3> ff_val;
+    ff_val = val;
+    EXPECT_EQ("0-000-011", bitstring(ff_val));
+}
+
 TEST(FlexFloatNearestRoundingTest, DenormalSmallest) {
     fesetround(FE_TONEAREST);
-    const double val = 0.03125;
+    const double val = 0.03125; // 1/32
     flexfloat<3, 3> ff_val;
     ff_val = val;
     EXPECT_EQ("0-000-001", bitstring(ff_val));
@@ -66,7 +90,7 @@ TEST(FlexFloatNearestRoundingTest, DenormalSmallest) {
 
 TEST(FlexFloatNearestRoundingTest, LessThanDenormalSmallest1) {
     fesetround(FE_TONEAREST);
-    const double val = 0.015625;
+    const double val = 0.0234375; // 1/32-1/64 = 3/128
     flexfloat<3, 3> ff_val;
     ff_val = val;
     EXPECT_EQ("0-000-001", bitstring(ff_val));
@@ -74,7 +98,7 @@ TEST(FlexFloatNearestRoundingTest, LessThanDenormalSmallest1) {
 
 TEST(FlexFloatNearestRoundingTest, LessThanDenormalSmallest2) {
     fesetround(FE_TONEAREST);
-    const double val = 1.5625e-05;
+    const double val = 0.015625; // 1/64
     flexfloat<3, 3> ff_val;
     ff_val = val;
     EXPECT_EQ("0-000-000", bitstring(ff_val));
@@ -133,7 +157,7 @@ TEST(FlexFloatNearestRoundingTest, DoubleToApproximate3) {
     const double val = 12.5;
     flexfloat<3, 3> ff_val;
     ff_val = val;
-    EXPECT_EQ("0-110-101", bitstring(ff_val));
+    EXPECT_EQ("0-110-100", bitstring(ff_val));
 }
 
 TEST(FlexFloatNearestRoundingTest, DoubleNeg) {
