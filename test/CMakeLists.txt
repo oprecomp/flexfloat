@@ -16,6 +16,10 @@ add_executable(nearest_rounding nearest_rounding.cpp)
 target_link_libraries(nearest_rounding flexfloat gtest_main)
 add_test(NAME test_nearest_rounding COMMAND nearest_rounding)
 
+add_executable(exception_flags exception_flags.cpp)
+target_link_libraries(exception_flags flexfloat gtest_main)
+add_test(NAME test_exception_flags COMMAND exception_flags)
+
 add_executable(upward_rounding upward_rounding.cpp)
 target_link_libraries(upward_rounding flexfloat gtest_main)
 add_test(NAME test_upward_rounding COMMAND upward_rounding)
