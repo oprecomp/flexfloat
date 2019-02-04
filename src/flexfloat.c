@@ -105,8 +105,8 @@ uint_t flexfloat_get_bits(flexfloat_t *a)
 
 #ifdef FLEXFLOAT_ROUNDING
 
-// check if rounding to nearest is required (the most significant bit of the discarded ones is 1)
-bool flexfloat_nearest_rounding(const flexfloat_t *a, int_fast16_t exp)
+// get rounding bit from backend value (first bit after represented LSB)
+bool flexfloat_round_bit(const flexfloat_t *a, int_fast16_t exp)
 {
     if(exp <= 0 && EXPONENT(CAST_TO_INT(a->value)) != 0)
     {
@@ -122,27 +122,46 @@ bool flexfloat_nearest_rounding(const flexfloat_t *a, int_fast16_t exp)
     }
 }
 
+// get sticky bit from backend value (logic OR of all bits after represented LSB except the round bit)
+bool flexfloat_sticky_bit(const flexfloat_t *a, int_fast16_t exp)
+{
+    if(exp <= 0 && EXPONENT(CAST_TO_INT(a->value)) != 0)
+    {
+        int shift = (- exp + 1);
+        uint_t denorm = 0;
+        if(shift < NUM_BITS)
+            denorm = ((CAST_TO_INT(a->value) & MASK_FRAC) | MASK_FRAC_MSB) >> shift;
+        return (denorm & (MASK_FRAC >> (a->desc.frac_bits + 1))) ||
+               ( ((denorm & MASK_FRAC) == 0)  && (CAST_TO_INT(a->value)!=0) );
+    }
+    else
+    {
+        return CAST_TO_INT(a->value) & (MASK_FRAC >> (a->desc.frac_bits + 1));
+    }
+}
+
+// check if rounding to nearest is required (the most significant bit of the discarded ones is 1)
+bool flexfloat_nearest_rounding(const flexfloat_t *a, int_fast16_t exp)
+{
+    if (flexfloat_round_bit(a, exp))
+        if (flexfloat_sticky_bit(a, exp)) // > ulp/2 away
+        {
+            return 1;
+        }
+        else // = ulp/2 away, round towards even result, decided by LSB of mantissa
+        {
+            if (exp <= 0) // denormal
+                return flexfloat_denorm_frac(a, exp) & 0x1;
+            return flexfloat_frac(a) & 0x1;
+        }
+    return 0; // < ulp/2 away
+}
+
 // check if rounding to +inf/-inf is required (at least one bit of the discarded ones is 1)
 bool flexfloat_inf_rounding(const flexfloat_t *a, int_fast16_t exp, bool sign, bool plus)
 {
-    if((plus && !sign) || (!plus && sign))
-    {
-        if(exp <= 0 && EXPONENT(CAST_TO_INT(a->value)) != 0)
-        {
-            int shift = (- exp + 1);
-            uint_t denorm = 0;
-            if(shift < NUM_BITS)
-                denorm = ( ((CAST_TO_INT(a->value) & MASK_FRAC)
-                           | MASK_FRAC_MSB)
-                         ) >> shift;
-            return (denorm & (MASK_FRAC >> (a->desc.frac_bits))) ||
-                   ( ((denorm & MASK_FRAC) == 0)  && (CAST_TO_INT(a->value)!=0) );
-        }
-        else
-        {
-            return CAST_TO_INT(a->value) & (MASK_FRAC >> (a->desc.frac_bits));
-        }
-    }
+    if (flexfloat_round_bit(a, exp) || flexfloat_sticky_bit(a, exp))
+        return (plus ^ sign);
     return 0;
 }
 
@@ -181,24 +200,8 @@ void flexfloat_sanitize(flexfloat_t *a)
     // Sign
     sign = flexfloat_sign(a);
 
-    // Denormalized backend value
-    if(EXPONENT(CAST_TO_INT(a->value)) == 0)
-    {
-        // Set to the smallest normalized value
-        if(a->desc.exp_bits < NUM_BITS_EXP)
-        {
-
-            CAST_TO_INT(a->value) = (sign == 0? SMALLEST_NORM_POS:
-                                                SMALLEST_NORM_NEG);
-        }
-    }
-
     // Exponent
     exp = flexfloat_exp(a);
-
-
-    // Exponent of NaN and Inf (target format)
-    inf_exp = flexfloat_inf_exp(a->desc);
 
 #ifdef FLEXFLOAT_ROUNDING
     // In these cases no rounding is needed
@@ -229,11 +232,17 @@ void flexfloat_sanitize(flexfloat_t *a)
     }
 #endif
 
+    // Exponent of NaN and Inf (target format)
+    inf_exp = flexfloat_inf_exp(a->desc);
+
     // Mantissa
     frac = flexfloat_frac(a);
 
-   if(EXPONENT(CAST_TO_INT(a->value)) == 0) // Denorm backend format
+    if(EXPONENT(CAST_TO_INT(a->value)) == 0) // Denorm backend format - represented format also denormal
+    {
+        CAST_TO_INT(a->value) = flexfloat_denorm_pack(a->desc, sign, frac);
         return;
+    }
 
    if(exp <= 0) // Denormalized value in the target format (saved in normalized format in the backend value)
     {

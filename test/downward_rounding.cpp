@@ -56,6 +56,30 @@ TEST(FlexFloatDownwardRoundingTest, Denormal3Bits) {
     EXPECT_EQ("0-000-111", bitstring(ff_val));
 }
 
+TEST(FlexFloatDownwardRoundingTest, DenormalQuarter) {
+    fesetround(FE_DOWNWARD);
+    const double val = 0.0703125; // 1/16 + 1/128
+    flexfloat<3, 3> ff_val;
+    ff_val = val;
+    EXPECT_EQ("0-000-010", bitstring(ff_val));
+}
+
+TEST(FlexFloatDownwardRoundingTest, DenormalHalfway) {
+    fesetround(FE_DOWNWARD);
+    const double val = 0.078125; // 1/16 + 1/64
+    flexfloat<3, 3> ff_val;
+    ff_val = val;
+    EXPECT_EQ("0-000-010", bitstring(ff_val));
+}
+
+TEST(FlexFloatDownwardRoundingTest, DenormalThreeQuarters) {
+    fesetround(FE_DOWNWARD);
+    const double val = 0.0859375; // 1/16 + 3/128
+    flexfloat<3, 3> ff_val;
+    ff_val = val;
+    EXPECT_EQ("0-000-010", bitstring(ff_val));
+}
+
 TEST(FlexFloatDownwardRoundingTest, DenormalSmallest) {
     fesetround(FE_DOWNWARD);
     const double val = 0.03125;
@@ -66,7 +90,7 @@ TEST(FlexFloatDownwardRoundingTest, DenormalSmallest) {
 
 TEST(FlexFloatDownwardRoundingTest, LessThanDenormalSmallest1) {
     fesetround(FE_DOWNWARD);
-    const double val = 0.015625;
+    const double val = 0.0234375; // 1/32-1/64 = 3/128
     flexfloat<3, 3> ff_val;
     ff_val = val;
     EXPECT_EQ("0-000-000", bitstring(ff_val));
@@ -74,7 +98,7 @@ TEST(FlexFloatDownwardRoundingTest, LessThanDenormalSmallest1) {
 
 TEST(FlexFloatDownwardRoundingTest, LessThanDenormalSmallest2) {
     fesetround(FE_DOWNWARD);
-    const double val = 1.5625e-05;
+    const double val = 0.015625; // 1/64
     flexfloat<3, 3> ff_val;
     ff_val = val;
     EXPECT_EQ("0-000-000", bitstring(ff_val));
