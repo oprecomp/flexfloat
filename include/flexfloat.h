@@ -34,6 +34,12 @@ extern "C" {
 #define FLEXFLOAT_ROUNDING
 #endif
 
+// Enable FP environment access for rounding and flags
+#if defined(FLEXFLOAT_ROUNDING) || defined(FLEXFLOAT_STATS)
+#include <fenv.h>
+#pragma STDC FENV_ACCESS ON
+#endif
+
 // Backend value precision
 #if !defined(FLEXFLOAT_ON_SINGLE) && !defined(FLEXFLOAT_ON_DOUBLE) && !defined(FLEXFLOAT_ON_QUAD)
 #error "A backend type must be specified (FLEXFLOAT_ON_SINGLE, FLEXFLOAT_ON_DOUBLE or FLEXFLOAT_ON_QUAD)"
@@ -101,6 +107,22 @@ typedef __float128 fp_t;
 #define PRINTF_FORMAT "%.38Lf"
 #endif /* FLEXFLOAT_ON_QUAD */
 
+// Check support for exception flags if enabled
+#ifdef FLEXFLOAT_FLAGS
+#if FE_ALL_EXCEPT == 0
+#error "Exception flags were enabled with FLEXFLOAT_FLAGS, however the implementation does not support floating-point exceptions"
+#elif !defined(FE_DIVBYZERO)
+#error "Exception flags were enabled with FLEXFLOAT_FLAGS, however the implementation does not support FE_DIVBYZERO"
+#elif !defined(FE_INEXACT)
+#error "Exception flags were enabled with FLEXFLOAT_FLAGS, however the implementation does not support FE_INEXACT"
+#elif !defined(FE_INVALID)
+#error "Exception flags were enabled with FLEXFLOAT_FLAGS, however the implementation does not support FE_INVALID"
+#elif !defined(FE_OVERFLOW)
+#error "Exception flags were enabled with FLEXFLOAT_FLAGS, however the implementation does not support FE_OVERFLOW"
+#elif !defined(FE_UNDERFLOW)
+#error "Exception flags were enabled with FLEXFLOAT_FLAGS, however the implementation does not support FE_UNDERFLOW"
+#endif
+#endif
 
 // Helper macros
 

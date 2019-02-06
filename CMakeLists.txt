@@ -36,6 +36,7 @@ target_include_directories(flexfloat PUBLIC ${PROJECT_SOURCE_DIR}/include)
 option(SINGLE_BACKEND "Use single-precision type (float) as a backend type instead of double precision" OFF)
 option(QUAD_BACKEND "Use quad-precision type (_Float128) as a backend type instead of double precision" OFF)
 option(DISABLE_ROUNDING "Disable the library support to IEEE rounding modes (truncation is always applied)" OFF)
+option(ENABLE_FLAGS "Enable support for floating-point exception flags" OFF)
 option(ENABLE_STATS "Enable collection of statistics" OFF)
 option(ENABLE_TRACKING "Enable track of error accumulation on program variables" OFF)
 
@@ -43,17 +44,21 @@ option(ENABLE_TRACKING "Enable track of error accumulation on program variables"
 if(SINGLE_BACKEND)
     file(WRITE include/flexfloat_config.h "#define FLEXFLOAT_ON_SINGLE\n" )
 elseif(QUAD_BACKEND)
-    file(WRITE include/flexfloat_config.h "#define FLEXFLOAT_ON_QUAD\n" )    
+    file(WRITE include/flexfloat_config.h "#define FLEXFLOAT_ON_QUAD\n" )
 else()
     file(WRITE include/flexfloat_config.h "#define FLEXFLOAT_ON_DOUBLE\n" )
 endif()
 
 if(DISABLE_ROUNDING)
-    file(APPEND include/flexfloat_config.h "#define FLEXFLOAT_NO_ROUNDING\n" )    
+    file(APPEND include/flexfloat_config.h "#define FLEXFLOAT_NO_ROUNDING\n" )
+endif()
+
+if(ENABLE_FLAGS)
+    file(APPEND include/flexfloat_config.h "#define FLEXFLOAT_FLAGS\n" )
 endif()
 
 if(ENABLE_STATS)
-    file(APPEND include/flexfloat_config.h "#define FLEXFLOAT_STATS\n" )    
+    file(APPEND include/flexfloat_config.h "#define FLEXFLOAT_STATS\n" )
 endif()
 
 if(ENABLE_TRACKING)

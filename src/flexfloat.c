@@ -19,8 +19,9 @@
 // To avoid manually discerning backend-type for calls from math.h
 #include <tgmath.h>
 
-#ifdef FLEXFLOAT_ROUNDING
+#if defined(FLEXFLOAT_ROUNDING)|| defined(FLEXFLOAT_FLAGS)
 #include <fenv.h>
+#pragma STDC FENV_ACCESS ON
 #endif
 
 #include "assert.h"
@@ -208,6 +209,14 @@ void flexfloat_sanitize(flexfloat_t *a)
     // In these cases no rounding is needed
     if (!(exp == INF_EXP  || a->desc.frac_bits == NUM_BITS_FRAC))
     {
+#ifdef FLEXFLOAT_FLAGS
+        // Inexact results raise an exception
+        if(flexfloat_round_bit(a, exp) || flexfloat_sticky_bit(a, exp))
+            feraiseexcept(FE_INEXACT);
+        // As rounding uses FP operations, we don't want to tarnish the accrued flags
+        fexcept_t flags;
+        fegetexceptflag(&flags, FE_ALL_EXCEPT);
+#endif
         // Rounding mode
         int mode = fegetround();
         if(mode == FE_TONEAREST && flexfloat_nearest_rounding(a, exp))
@@ -225,6 +234,10 @@ void flexfloat_sanitize(flexfloat_t *a)
             int_t rounding_value = flexfloat_rounding_value(a, exp, sign);
             a->value +=  CAST_TO_FP(rounding_value);
         }
+#ifdef FLEXFLOAT_FLAGS
+        // Restore flags from before
+        fesetexceptflag(&flags, FE_ALL_EXCEPT);
+#endif
         //a->value = a->value;
         __asm__ __volatile__ ("" ::: "memory");
 
@@ -247,6 +260,10 @@ void flexfloat_sanitize(flexfloat_t *a)
 
    if(exp <= 0) // Denormalized value in the target format (saved in normalized format in the backend value)
     {
+#ifdef FLEXFLOAT_FLAGS
+        // Raise the underflow exception
+        feraiseexcept(FE_UNDERFLOW);
+#endif
         uint_t denorm = flexfloat_denorm_frac(a, exp);
         if(denorm == 0) // value too low to be represented, return zero
         {
@@ -267,17 +284,30 @@ void flexfloat_sanitize(flexfloat_t *a)
             }
         }
     }
-    else if(exp == INF_EXP) // Inf of NaN
+    else if(exp == INF_EXP && (CAST_TO_INT(a->value) & MASK_FRAC)) // NaN
     {
+        exp = inf_exp;
+    }
+    else if(exp == INF_EXP) // Inf
+    {
+#ifdef FLEXFLOAT_FLAGS
+        // Raise the proper overflow exception, unless a DIV/0 exception had occured
+        if (!fetestexcept(FE_DIVBYZERO))
+            feraiseexcept(FE_OVERFLOW | FE_INEXACT);
+#endif
         exp = inf_exp;
     }
     else if(exp >= inf_exp) // Out of bounds for target format: set infinity
     {
+#ifdef FLEXFLOAT_FLAGS
+        // Raise the proper overflow exception
+        feraiseexcept(FE_OVERFLOW | FE_INEXACT);
+#endif
         exp = inf_exp;
         frac = 0UL;
     }
 
-    //printf("ENCODING: %d %d %lu\n", sign, exp, frac);
+    // printf("ENCODING: %d %d %lu\n", sign, exp, frac);
     CAST_TO_INT(a->value) = flexfloat_pack(a->desc, sign, exp, frac);
 }
 
