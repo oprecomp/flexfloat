@@ -286,7 +286,10 @@ void flexfloat_sanitize(flexfloat_t *a)
     }
     else if(exp == INF_EXP && (CAST_TO_INT(a->value) & MASK_FRAC)) // NaN
     {
-        exp = inf_exp;
+        exp  = inf_exp;
+        // Sanitize to canonical NaN (positive sign, quiet bit set)
+        sign = 0;
+        frac = 0x1 << a->desc.frac_bits-1;
     }
     else if(exp == INF_EXP) // Inf
     {
