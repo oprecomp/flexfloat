@@ -35,9 +35,18 @@ extern "C" {
 #endif
 
 // Enable FP environment access for rounding and flags
-#if defined(FLEXFLOAT_ROUNDING) || defined(FLEXFLOAT_STATS)
+#if defined(FLEXFLOAT_ROUNDING) || defined(FLEXFLOAT_FLAGS)
 #include <fenv.h>
 #pragma STDC FENV_ACCESS ON
+#endif
+
+#ifndef __STDC_IEC_559__
+#error "Implementation not IEEE compliant"
+#endif
+
+// GCC versions before 8.2 (for sure not on 7.2, don't know when it was fixed) don't raise flags on comparisons correctly
+#if !defined(__GNUC__) || (defined(__GNUC__) && (__GNUC__ >= 8) && (__GNUC_MINOR__ >= 2))
+#define FLEXFLOAT_CORRECT_CMP_FLAGS 1
 #endif
 
 // Backend value precision

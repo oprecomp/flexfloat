@@ -551,6 +551,10 @@ INLINE bool ff_neq(const flexfloat_t *a, const flexfloat_t *b) {
 
 INLINE bool ff_le(const flexfloat_t *a, const flexfloat_t *b) {
     assert((a->desc.exp_bits == b->desc.exp_bits) && (a->desc.frac_bits == b->desc.frac_bits));
+    #if defined(FLEXFLOAT_FLAGS) && !defined(FLEXFLOAT_CORRECT_CMP_FLAGS)
+    if (isnan(a->value) || isnan(b->value))
+        feraiseexcept(FE_INVALID);
+    #endif
     #ifdef FLEXFLOAT_STATS
     if(StatsEnabled) getOpStats(a->desc)->cmp += 1;
     #endif
@@ -559,6 +563,10 @@ INLINE bool ff_le(const flexfloat_t *a, const flexfloat_t *b) {
 
 INLINE bool ff_lt(const flexfloat_t *a, const flexfloat_t *b) {
     assert((a->desc.exp_bits == b->desc.exp_bits) && (a->desc.frac_bits == b->desc.frac_bits));
+    #if defined(FLEXFLOAT_FLAGS) && !defined(FLEXFLOAT_CORRECT_CMP_FLAGS)
+    if (isnan(a->value) || isnan(b->value))
+        feraiseexcept(FE_INVALID);
+    #endif
     #ifdef FLEXFLOAT_STATS
     if(StatsEnabled) getOpStats(a->desc)->cmp += 1;
     #endif
@@ -567,6 +575,10 @@ INLINE bool ff_lt(const flexfloat_t *a, const flexfloat_t *b) {
 
 INLINE bool ff_ge(const flexfloat_t *a, const flexfloat_t *b) {
     assert((a->desc.exp_bits == b->desc.exp_bits) && (a->desc.frac_bits == b->desc.frac_bits));
+    #if defined(FLEXFLOAT_FLAGS) && !defined(FLEXFLOAT_CORRECT_CMP_FLAGS)
+    if (isnan(a->value) || isnan(b->value))
+        feraiseexcept(FE_INVALID);
+    #endif
     #ifdef FLEXFLOAT_STATS
     if(StatsEnabled) getOpStats(a->desc)->cmp += 1;
     #endif
@@ -575,6 +587,10 @@ INLINE bool ff_ge(const flexfloat_t *a, const flexfloat_t *b) {
 
 INLINE bool ff_gt(const flexfloat_t *a, const flexfloat_t *b) {
     assert((a->desc.exp_bits == b->desc.exp_bits) && (a->desc.frac_bits == b->desc.frac_bits));
+    #if defined(FLEXFLOAT_FLAGS) && !defined(FLEXFLOAT_CORRECT_CMP_FLAGS)
+    if (isnan(a->value) || isnan(b->value))
+        feraiseexcept(FE_INVALID);
+    #endif
     #ifdef FLEXFLOAT_STATS
     if(StatsEnabled) getOpStats(a->desc)->cmp += 1;
     #endif
