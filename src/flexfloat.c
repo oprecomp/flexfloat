@@ -57,6 +57,7 @@ uint_t flexfloat_denorm_frac(const flexfloat_t *a, int_fast16_t exp)
     }
 }
 
+// Pack normalized desc-fraction with desc-relative exponent to backend float
 uint_t flexfloat_pack(flexfloat_desc_t desc, bool sign, int_fast16_t exp, uint_t frac)
 {
     int_fast16_t bias    = flexfloat_bias(desc);
@@ -83,7 +84,7 @@ uint_t flexfloat_pack_bits(flexfloat_desc_t desc, uint_t bits)
 {
     bool sign = (bits >> (desc.exp_bits + desc.frac_bits)) & 0x1;
     int_fast16_t exp = (bits >> desc.frac_bits) & ((0x1<<desc.exp_bits) - 1);
-    uint_t frac = bits & ((0x1<<desc.frac_bits) - 1);
+    uint_t frac = bits & ((UINT_C(1)<<desc.frac_bits) - 1);
 
     if(exp == 0 && frac == 0)
       return PACK(sign, 0, 0);
@@ -280,7 +281,7 @@ void flexfloat_sanitize(flexfloat_t *a)
             }
             else
             {
-              frac = 0;
+              frac = UINT_C(0);
             }
         }
     }
@@ -289,7 +290,7 @@ void flexfloat_sanitize(flexfloat_t *a)
         exp  = inf_exp;
         // Sanitize to canonical NaN (positive sign, quiet bit set)
         sign = 0;
-        frac = 0x1 << a->desc.frac_bits-1;
+        frac = UINT_C(1) << a->desc.frac_bits-1;
     }
     else if(exp == INF_EXP) // Inf
     {
@@ -307,7 +308,7 @@ void flexfloat_sanitize(flexfloat_t *a)
         feraiseexcept(FE_OVERFLOW | FE_INEXACT);
 #endif
         exp = inf_exp;
-        frac = 0UL;
+        frac = UINT_C(0);
     }
 
     // printf("ENCODING: %d %d %lu\n", sign, exp, frac);

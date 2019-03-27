@@ -39,7 +39,7 @@ void show(fp_t d)
     #endif
     #ifdef FLEXFLOAT_ON_DOUBLE
     printf("0x%016lx\t", u);
-    #endif    
+    #endif
     std::cout << std::bitset<NUM_BITS>(u) << std::endl;
 }
 
