@@ -578,10 +578,30 @@ INLINE void ff_fma(flexfloat_t *dest, const flexfloat_t *a, const flexfloat_t *b
     assert((dest->desc.exp_bits == a->desc.exp_bits) && (dest->desc.frac_bits == a->desc.frac_bits) &&
            (a->desc.exp_bits == b->desc.exp_bits) && (a->desc.frac_bits == b->desc.frac_bits) &&
            (b->desc.exp_bits == c->desc.exp_bits) && (b->desc.frac_bits == c->desc.frac_bits));
-    dest->value = fma(a->value, b->value, c->value);
+    #ifdef FLEXFLOAT_ROUNDING
+    // Change the rounding mode according to the error direction if we need to do manual rounding for RNE
+    int mode = fegetround();
+    bool eff_sub = flexfloat_sign(a) ^ flexfloat_sign(b) ^ flexfloat_sign(c);
+    if (a->desc.frac_bits < NUM_BITS_FRAC && mode == FE_TONEAREST) {
+        if (!eff_sub) { // in this case, we need to round away from zero
+            fexcept_t flags;
+            fegetexceptflag(&flags, FE_ALL_EXCEPT); // get accrued flags to not tarnish them here
+            double try = fma(a->value, b->value, c->value);
+            (try >= 0) ? fesetround(FE_UPWARD) : fesetround(FE_DOWNWARD);
+            fesetexceptflag(&flags, FE_ALL_EXCEPT); // restore flags here
+        } else {
+            fesetround(FE_TOWARDZERO); // just truncate
+        }
+    }
+    #endif
+    dest->value = fma(a->value, b->value, c->value); // finally the actual operation
     #ifdef FLEXFLOAT_TRACKING
     dest->exact_value = fma(a->exact_value, b->exact_value, c->exact_value);
     if(dest->tracking_fn) (dest->tracking_fn)(dest, dest->tracking_arg);
+    #endif
+    #ifdef FLEXFLOAT_ROUNDING
+    if (a->desc.frac_bits < NUM_BITS_FRAC && mode == FE_TONEAREST)
+        fesetround(FE_TONEAREST); // restore rounding
     #endif
     flexfloat_sanitize(dest);
     #ifdef FLEXFLOAT_STATS
