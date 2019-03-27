@@ -87,9 +87,22 @@ uint_t flexfloat_pack_bits(flexfloat_desc_t desc, uint_t bits)
     uint_t frac = bits & ((UINT_C(1)<<desc.frac_bits) - 1);
 
     if(exp == 0 && frac == 0)
-      return PACK(sign, 0, 0);
+    {
+        return PACK(sign, 0, 0);
+    }
+    else if(exp <= 0) // denormal
+    {
+        // printf("[ff_pack_bits] normalizing 0x%016lx, exp %d\n", frac, exp);
+        while (frac && !((frac <<= 1) & (UINT_C(1) << desc.frac_bits))) // normalize
+            exp--;
+        frac &= ((UINT_C(1) << desc.frac_bits) - 1); // remove implicit bit
+        // printf("[ff_pack_bits] done normalizing 0x%016lx, exp %d\n", frac, exp);
+        return flexfloat_pack(desc, sign, exp, frac);
+    }
     else
-      return flexfloat_pack(desc, sign, exp, frac);
+    {
+        return flexfloat_pack(desc, sign, exp, frac);
+    }
 }
 
 void flexfloat_set_bits(flexfloat_t *a, uint_t bits)
@@ -100,10 +113,17 @@ void flexfloat_set_bits(flexfloat_t *a, uint_t bits)
 uint_t flexfloat_get_bits(flexfloat_t *a)
 {
     int_fast16_t exp = flexfloat_exp(a);
+    uint_t frac = flexfloat_frac(a);
+
     if(exp == INF_EXP) exp = flexfloat_inf_exp(a->desc);
-    return (flexfloat_sign(a) << (a->desc.exp_bits + a->desc.frac_bits))
-           + (exp << a->desc.frac_bits)
-           + flexfloat_frac(a);
+    else if(exp <= 0) {
+        frac = flexfloat_denorm_frac(a, exp);
+        exp = 0;
+    }
+
+    return ((uint_t)flexfloat_sign(a) << (a->desc.exp_bits + a->desc.frac_bits))
+           + ((uint_t)exp << a->desc.frac_bits)
+           + frac;
 }
 
 #ifdef FLEXFLOAT_ROUNDING
