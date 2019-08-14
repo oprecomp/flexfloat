@@ -172,7 +172,7 @@ TEST(FlexFloatSanitizeTest, Nan2) {
     const double val = 0.0/0.0;
     flexfloat<3, 3> ff_val;
     ff_val = val;
-    EXPECT_EQ("1-111-100", bitstring(ff_val));
+    EXPECT_EQ("0-111-100", bitstring(ff_val));
 }
 
 TEST(FlexFloatSanitizeTest, Inf) {
