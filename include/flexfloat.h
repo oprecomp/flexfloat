@@ -224,13 +224,19 @@ __float128 ff_get_float128(const flexfloat_t *obj);
 
 void ff_inverse(flexfloat_t *dest, const flexfloat_t *a);
 void ff_add(flexfloat_t *dest, const flexfloat_t *a, const flexfloat_t *b);
+void ff_add_any(flexfloat_t *dest, const flexfloat_t *a, const flexfloat_t *b);
 void ff_sub(flexfloat_t *dest, const flexfloat_t *a, const flexfloat_t *b);
+void ff_sub_any(flexfloat_t *dest, const flexfloat_t *a, const flexfloat_t *b);
 void ff_mul(flexfloat_t *dest, const flexfloat_t *a, const flexfloat_t *b);
+void ff_mul_any(flexfloat_t *dest, const flexfloat_t *a, const flexfloat_t *b);
 void ff_div(flexfloat_t *dest, const flexfloat_t *a, const flexfloat_t *b);
+void ff_div_any(flexfloat_t *dest, const flexfloat_t *a, const flexfloat_t *b);
 void ff_acc(flexfloat_t *dest, const flexfloat_t *a);
+void ff_acc_any(flexfloat_t *dest, const flexfloat_t *a);
 void ff_min(flexfloat_t *dest, const flexfloat_t *a, const flexfloat_t *b);
 void ff_max(flexfloat_t *dest, const flexfloat_t *a, const flexfloat_t *b);
 void ff_fma(flexfloat_t *dest, const flexfloat_t *a, const flexfloat_t *b, const flexfloat_t *c);
+void ff_fma_any(flexfloat_t *dest, const flexfloat_t *a, const flexfloat_t *b, const flexfloat_t *c);
 
 
 // Relational operators
