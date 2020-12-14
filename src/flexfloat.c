@@ -215,16 +215,27 @@ void flexfloat_sanitize(flexfloat_t *a)
     int_fast16_t inf_exp;
     uint_t frac;
 
-    // This case does not require to be sanitized
-    if(a->desc.exp_bits  == NUM_BITS_EXP  &&
-       a->desc.frac_bits == NUM_BITS_FRAC)
-        return;
 
     // Sign
     sign = flexfloat_sign(a);
 
     // Exponent
     exp = flexfloat_exp(a);
+
+    // This case does not require to be sanitized exccept for NaNs
+    if(a->desc.exp_bits  == NUM_BITS_EXP && a->desc.frac_bits == NUM_BITS_FRAC)
+    {
+        if(exp == INF_EXP && (CAST_TO_INT(a->value) & MASK_FRAC)) // NaN
+        {
+        // Sanitize to canonical NaN (positive sign, quiet bit set)
+        sign = 0;
+        frac = UINT_C(1) << a->desc.frac_bits-1;
+        CAST_TO_INT(a->value) = flexfloat_pack(a->desc, sign, exp, frac);
+        }
+        return;
+    }
+
+    // printf("enter sanitize: 0x%016lx s%d e%d m0x%013lx\n", CAST_TO_INT(a->value), sign, exp, CAST_TO_INT(a->value)&MASK_FRAC);
 
 #ifdef FLEXFLOAT_ROUNDING
     // In these cases no rounding is needed
@@ -416,7 +427,6 @@ INLINE void ff_init_long(flexfloat_t *obj, long value, flexfloat_desc_t desc) {
 }
 
 
-
 INLINE void ff_cast(flexfloat_t *obj, const flexfloat_t *source, flexfloat_desc_t desc ) {
     obj->value = source->value;
     #ifdef FLEXFLOAT_TRACKING
@@ -481,6 +491,20 @@ INLINE void ff_add(flexfloat_t *dest, const flexfloat_t *a, const flexfloat_t *b
     #endif
 }
 
+// Operation result in different precision than source
+INLINE void ff_add_any(flexfloat_t *dest, const flexfloat_t *a, const flexfloat_t *b) {
+    dest->value = a->value + b->value;
+    #ifdef FLEXFLOAT_TRACKING
+    dest->exact_value = a->exact_value + b->exact_value;
+    if(dest->tracking_fn) (dest->tracking_fn)(dest, dest->tracking_arg);
+    #endif
+    flexfloat_sanitize(dest);
+    #ifdef FLEXFLOAT_STATS
+    // TODO STATS
+    // if(StatsEnabled) getOpStats(dest->desc)->add += 1;
+    #endif
+}
+
 INLINE void ff_sub(flexfloat_t *dest, const flexfloat_t *a, const flexfloat_t *b) {
     assert((dest->desc.exp_bits == a->desc.exp_bits) && (dest->desc.frac_bits == a->desc.frac_bits) &&
            (a->desc.exp_bits == b->desc.exp_bits) && (a->desc.frac_bits == b->desc.frac_bits));
@@ -492,6 +516,20 @@ INLINE void ff_sub(flexfloat_t *dest, const flexfloat_t *a, const flexfloat_t *b
     flexfloat_sanitize(dest);
     #ifdef FLEXFLOAT_STATS
     if(StatsEnabled) getOpStats(dest->desc)->sub += 1;
+    #endif
+}
+
+// Operation result in different precision than source
+INLINE void ff_sub_any(flexfloat_t *dest, const flexfloat_t *a, const flexfloat_t *b) {
+    dest->value = a->value - b->value;
+    #ifdef FLEXFLOAT_TRACKING
+    dest->exact_value = a->exact_value - b->exact_value;
+    if(dest->tracking_fn) (dest->tracking_fn)(dest, dest->tracking_arg);
+    #endif
+    flexfloat_sanitize(dest);
+    #ifdef FLEXFLOAT_STATS
+    // TODO STATS
+    // if(StatsEnabled) getOpStats(dest->desc)->sub += 1;
     #endif
 }
 
@@ -509,6 +547,20 @@ INLINE void ff_mul(flexfloat_t *dest, const flexfloat_t *a, const flexfloat_t *b
     #endif
 }
 
+// Operation result in different precision than source
+INLINE void ff_mul_any(flexfloat_t *dest, const flexfloat_t *a, const flexfloat_t *b) {
+    dest->value = a->value * b->value;
+    #ifdef FLEXFLOAT_TRACKING
+    dest->exact_value = a->exact_value * b->exact_value;
+    if(dest->tracking_fn) (dest->tracking_fn)(dest, dest->tracking_arg);
+    #endif
+    flexfloat_sanitize(dest);
+    #ifdef FLEXFLOAT_STATS
+    // TODO STATS
+    // if(StatsEnabled) getOpStats(dest->desc)->mul += 1;
+    #endif
+}
+
 INLINE void ff_div(flexfloat_t *dest, const flexfloat_t *a, const flexfloat_t *b) {
     assert((dest->desc.exp_bits == a->desc.exp_bits) && (dest->desc.frac_bits == a->desc.frac_bits) &&
            (a->desc.exp_bits == b->desc.exp_bits) && (a->desc.frac_bits == b->desc.frac_bits));
@@ -523,6 +575,20 @@ INLINE void ff_div(flexfloat_t *dest, const flexfloat_t *a, const flexfloat_t *b
     #endif
 }
 
+// Operation result in different precision than source
+INLINE void ff_div_any(flexfloat_t *dest, const flexfloat_t *a, const flexfloat_t *b) {
+    dest->value = a->value / b->value;
+    #ifdef FLEXFLOAT_TRACKING
+    dest->exact_value = a->exact_value / b->exact_value;
+    if(dest->tracking_fn) (dest->tracking_fn)(dest, dest->tracking_arg);
+    #endif
+    flexfloat_sanitize(dest);
+    #ifdef FLEXFLOAT_STATS
+    // TODO STATS
+    // if(StatsEnabled) getOpStats(dest->desc)->div += 1;
+    #endif
+}
+
 INLINE void ff_acc(flexfloat_t *dest, const flexfloat_t *a) {
     assert((dest->desc.exp_bits == a->desc.exp_bits) && (dest->desc.frac_bits == a->desc.frac_bits));
     dest->value += a->value;
@@ -533,6 +599,20 @@ INLINE void ff_acc(flexfloat_t *dest, const flexfloat_t *a) {
     flexfloat_sanitize(dest);
     #ifdef FLEXFLOAT_STATS
     if(StatsEnabled) getOpStats(dest->desc)->minus += 1;
+    #endif
+}
+
+// Operation result in different precision than source
+INLINE void ff_acc_any(flexfloat_t *dest, const flexfloat_t *a) {
+    dest->value += a->value;
+    #ifdef FLEXFLOAT_TRACKING
+    dest->exact_value += a->exact_value;
+    if(dest->tracking_fn) (dest->tracking_fn)(dest, dest->tracking_arg);
+    #endif
+    flexfloat_sanitize(dest);
+    #ifdef FLEXFLOAT_STATS
+    // TODO STATS
+    // if(StatsEnabled) getOpStats(dest->desc)->minus += 1;
     #endif
 }
 
@@ -606,6 +686,42 @@ INLINE void ff_fma(flexfloat_t *dest, const flexfloat_t *a, const flexfloat_t *b
     flexfloat_sanitize(dest);
     #ifdef FLEXFLOAT_STATS
     if(StatsEnabled) getOpStats(dest->desc)->fma += 1;
+    #endif
+}
+
+// Operation result in different precision than sources
+INLINE void ff_fma_any(flexfloat_t *dest, const flexfloat_t *a, const flexfloat_t *b, const flexfloat_t *c) {
+    #ifdef FLEXFLOAT_ROUNDING
+    // Change the rounding mode according to the error direction if we need to do manual rounding for RNE
+    int mode = fegetround();
+    bool eff_sub = flexfloat_sign(a) ^ flexfloat_sign(b) ^ flexfloat_sign(c);
+    if (((a->desc.frac_bits < NUM_BITS_FRAC) || (b->desc.frac_bits < NUM_BITS_FRAC)
+         || (c->desc.frac_bits < NUM_BITS_FRAC) || (dest->desc.frac_bits < NUM_BITS_FRAC))
+        && mode == FE_TONEAREST) {
+        if (!eff_sub) { // in this case, we need to round away from zero
+            fexcept_t flags;
+            fegetexceptflag(&flags, FE_ALL_EXCEPT); // get accrued flags to not tarnish them here
+            double try = fma(a->value, b->value, c->value);
+            (try >= 0) ? fesetround(FE_UPWARD) : fesetround(FE_DOWNWARD);
+            fesetexceptflag(&flags, FE_ALL_EXCEPT); // restore flags here
+        } else {
+            fesetround(FE_TOWARDZERO); // just truncate
+        }
+    }
+    #endif
+    dest->value = fma(a->value, b->value, c->value); // finally the actual operation
+    #ifdef FLEXFLOAT_TRACKING
+    dest->exact_value = fma(a->exact_value, b->exact_value, c->exact_value);
+    if(dest->tracking_fn) (dest->tracking_fn)(dest, dest->tracking_arg);
+    #endif
+    #ifdef FLEXFLOAT_ROUNDING
+    if (a->desc.frac_bits < NUM_BITS_FRAC && mode == FE_TONEAREST)
+        fesetround(FE_TONEAREST); // restore rounding
+    #endif
+    flexfloat_sanitize(dest);
+    #ifdef FLEXFLOAT_STATS
+    // TODO STATS
+    // if(StatsEnabled) getOpStats(dest->desc)->fma += 1;
     #endif
 }
 
