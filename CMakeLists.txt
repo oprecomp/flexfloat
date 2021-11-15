@@ -40,31 +40,36 @@ option(ENABLE_FLAGS "Enable support for floating-point exception flags" OFF)
 option(ENABLE_STATS "Enable collection of statistics" OFF)
 option(ENABLE_TRACKING "Enable track of error accumulation on program variables" OFF)
 
-
 if(SINGLE_BACKEND)
-    file(WRITE include/flexfloat_config.h "#define FLEXFLOAT_ON_SINGLE\n" )
+    set(FLEXFLOAT_ON_SINGLE ON)
 elseif(QUAD_BACKEND)
-    file(WRITE include/flexfloat_config.h "#define FLEXFLOAT_ON_QUAD\n" )
+    set(FLEXFLOAT_ON_QUAD ON)
 else()
-    file(WRITE include/flexfloat_config.h "#define FLEXFLOAT_ON_DOUBLE\n" )
+    set(FLEXFLOAT_ON_DOUBLE ON)
 endif()
 
-if(DISABLE_ROUNDING)
-    file(APPEND include/flexfloat_config.h "#define FLEXFLOAT_NO_ROUNDING\n" )
+set(FLEXFLOAT_NO_ROUNDING ${DISABLE_ROUNDING})
+set(FLEXFLOAT_FLAGS ${ENABLE_FLAGS})
+set(FLEXFLOAT_STATS ${ENABLE_STATS})
+set(FLEXFLOAT_TRACKING ${ENABLE_TRACKING})
+
+# Check for __float128 availability
+set(float128_check_src
+    "int main(int argc, char** argv){ __float128 v = (__float128) argc; return argc; }")
+include(CheckCSourceCompiles)
+check_c_source_compiles("${float128_check_src}" CC_HAS_FLOAT128)
+include(CheckCXXSourceCompiles)
+check_cxx_source_compiles("${float128_check_src}" CXX_HAS_FLOAT128)
+if(CC_HAS_FLOAT128 AND CXX_HAS_FLOAT128)
+    set(FLEXFLOAT_FLOAT128 ON)
+endif()
+if(FLEXFLOAT_ON_QUAD AND NOT FLEXFLOAT_FLOAT128)
+    message(FATAL_ERROR
+        "Asked for quadruple precision backend but __float128 isn't available on this platform")
 endif()
 
-if(ENABLE_FLAGS)
-    file(APPEND include/flexfloat_config.h "#define FLEXFLOAT_FLAGS\n" )
-endif()
-
-if(ENABLE_STATS)
-    file(APPEND include/flexfloat_config.h "#define FLEXFLOAT_STATS\n" )
-endif()
-
-if(ENABLE_TRACKING)
-    file(APPEND include/flexfloat_config.h "#define FLEXFLOAT_TRACKING\n" )
-endif()
-
+configure_file(${CMAKE_SOURCE_DIR}/include/flexfloat_config.h.in
+    ${CMAKE_SOURCE_DIR}/include/flexfloat_config.h)
 
 ### Unit testing
 
