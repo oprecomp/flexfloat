@@ -167,6 +167,7 @@ TEST(FlexFloatSanitizeTest, Nan1) {
     EXPECT_EQ("0-111-100", bitstring(ff_val));
 }
 
+#ifdef NAN_NORMALIZATION
 TEST(FlexFloatSanitizeTest, Nan2) {
     fesetround(FE_TOWARDZERO);
     const double val = 0.0/0.0;
@@ -174,6 +175,7 @@ TEST(FlexFloatSanitizeTest, Nan2) {
     ff_val = val;
     EXPECT_EQ("0-111-100", bitstring(ff_val));
 }
+#endif
 
 TEST(FlexFloatSanitizeTest, Inf) {
     fesetround(FE_TOWARDZERO);

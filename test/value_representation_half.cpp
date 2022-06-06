@@ -54,9 +54,9 @@ TEST_P(MyTest, TestFormula)
     flexfloat<5, 10> fx = d;
     fp_t recoverd_fx = (fp_t)(fx);
 
-     //printf("number:     \t"); show(d);
-     //printf("recoverd_fx:\t"); show(recoverd_fx);
-     //printf("expected:   \t"); show(expected);
+     printf("number:     \t"); show(d);
+     printf("recoverd_fx:\t"); show(recoverd_fx);
+     printf("expected:   \t"); show(expected);
 
     // Enforces the same reprsentation for nan's.
     uint_t out = reinterpret_as_double_bits(recoverd_fx);

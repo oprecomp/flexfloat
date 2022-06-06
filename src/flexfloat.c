@@ -222,9 +222,10 @@ void flexfloat_sanitize(flexfloat_t *a)
     // Exponent
     exp = flexfloat_exp(a);
 
-    // This case does not require to be sanitized exccept for NaNs
+    // This case does not require to be sanitized (except for NaNs)
     if(a->desc.exp_bits  == NUM_BITS_EXP && a->desc.frac_bits == NUM_BITS_FRAC)
     {
+#ifdef NAN_NORMALIZATION	    
         if(exp == INF_EXP && (CAST_TO_INT(a->value) & MASK_FRAC)) // NaN
         {
         // Sanitize to canonical NaN (positive sign, quiet bit set)
@@ -232,6 +233,7 @@ void flexfloat_sanitize(flexfloat_t *a)
         frac = UINT_C(1) << a->desc.frac_bits-1;
         CAST_TO_INT(a->value) = flexfloat_pack(a->desc, sign, exp, frac);
         }
+#endif
         return;
     }
 
@@ -319,9 +321,11 @@ void flexfloat_sanitize(flexfloat_t *a)
     else if(exp == INF_EXP && (CAST_TO_INT(a->value) & MASK_FRAC)) // NaN
     {
         exp  = inf_exp;
+#ifdef NAN_NORMALIZATION	
         // Sanitize to canonical NaN (positive sign, quiet bit set)
         sign = 0;
         frac = UINT_C(1) << a->desc.frac_bits-1;
+#endif	
     }
     else if(exp == INF_EXP) // Inf
     {

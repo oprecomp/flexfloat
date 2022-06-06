@@ -192,6 +192,7 @@ TEST(FlexFloatDownwardRoundingTest, Nan1) {
     EXPECT_EQ("0-111-100", bitstring(ff_val));
 }
 
+#ifdef NAN_NORMALIZATION
 TEST(FlexFloatDownwardRoundingTest, Nan2) {
     fesetround(FE_DOWNWARD);
     const double val = 0.0/0.0;
@@ -199,6 +200,7 @@ TEST(FlexFloatDownwardRoundingTest, Nan2) {
     ff_val = val;
     EXPECT_EQ("0-111-100", bitstring(ff_val));
 }
+#endif
 
 TEST(FlexFloatDownwardRoundingTest, Inf) {
     fesetround(FE_DOWNWARD);
