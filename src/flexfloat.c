@@ -115,8 +115,9 @@ uint_t flexfloat_get_bits(flexfloat_t *a)
     int_fast16_t exp = flexfloat_exp(a);
     uint_t frac = flexfloat_frac(a);
 
-    if(exp == INF_EXP) exp = flexfloat_inf_exp(a->desc);
-    else if(exp <= 0 && frac != 0) {
+    if(exp == INF_EXP)
+        exp = flexfloat_inf_exp(a->desc);
+    else if(exp <= 0) {
         frac = flexfloat_denorm_frac(a, exp);
         exp = 0;
     }
