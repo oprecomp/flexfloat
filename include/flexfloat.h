@@ -41,6 +41,20 @@ extern "C" {
 #endif
 
 #ifndef __STDC_IEC_559__
+// __STDC_IEC_559__ isn't defined, let's handle specific platforms
+// where we know proper IEEE 754 is in fact available despite the
+// missing macro:
+//
+// macOS
+#if defined(__APPLE__) && defined(__MACH__) && \
+    defined(__FLT_HAS_DENORM__) && defined(__FLT_HAS_INFINITY__) && \
+    defined(__DBL_HAS_DENORM__) && defined(__DBL_HAS_INFINITY__) && \
+    defined(__LDBL_HAS_DENORM__) && defined(__LDBL_HAS_INFINITY__)
+#define __STDC_IEC_559__
+#endif // macOS
+#endif // __STDC_IEC_559__
+
+#ifndef __STDC_IEC_559__
 #error "Implementation not IEEE compliant"
 #endif
 
