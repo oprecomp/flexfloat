@@ -282,10 +282,11 @@ public:
     INLINE explicit operator long double() const {
         return (long double)(*(reinterpret_cast<const fp_t *>(&(v.value))));
     }
-
+#ifdef FLEXFLOAT_FLOAT128
     INLINE explicit operator __float128() const {
         return (__float128)(*(reinterpret_cast<const fp_t *>(&(v.value))));
     }
+#endif
 
     /*------------------------------------------------------------------------
     | OPERATOR OVERLOADS: Arithmetics
